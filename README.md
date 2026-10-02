@@ -15,7 +15,7 @@
 
 ## هيكلية المشروع
 
-قسّمت الكود حسب المسؤوليات، كل طلب بيمرّ بالترتيب: route ثم controller ثم service.
+قسمت الكود حسب المسؤوليات، كل طلب بيمر بالترتيب: route ثم controller ثم service.
 
 ```
 src/
@@ -98,6 +98,21 @@ npm test         # في terminal ثاني
 
 الاختبارات بتنشئ بياناتها بنفسها وبتحذفها بعد ما تخلص.
 
+## الفرق بين Express و NestJS
+
+هدفي من المشروع كان أفهم الفرق بين Express و NestJS، فاخترت Express وبنيت فيه كل شي بنفسي.
+
+| الموضوع | في مشروعي (Express) | في NestJS |
+|---|---|---|
+| التنظيم | أنا قسمت الكود إلى routes و controllers و services | الـ framework بيفرض التنظيم عن طريق modules |
+| الاعتماديات | باستورد الملفات مباشرة (`import { prisma }`) | Dependency Injection: بتنكتب في الـ constructor و Nest بيمررها |
+| الروابط | ملف routes منفصل مع `express.Router` | decorators على الـ controller مثل `@Controller` و `@Post` |
+| التحقق من المدخلات | فحوصات `if` يدوية في الـ controller | DTO مع decorators و `ValidationPipe` |
+| معالجة الأخطاء | كلاس `AppError` و `errorHandler` كتبتهم بنفسي | استثناءات جاهزة مثل `NotFoundException` |
+| الاختبار | اختبارات تكامل على السيرفر الحقيقي | أسهل للـ unit tests لأن الـ DI بيسمح باستبدال الخدمات بنسخ وهمية |
+
+الخلاصة: Express بيعطيني حرية بس لازم أنظّم وأكتب كل شي بنفسي، و NestJS مبني فوق Express وبيفرض تنظيم جاهز. اخترت Express لأفهم الشغل اللي Nest بيعمله تلقائياً.
+
 ## الأوامر
 
 | الأمر | وظيفته |
@@ -106,10 +121,3 @@ npm test         # في terminal ثاني
 | `npm run build` | تحويل كود TypeScript إلى `dist/` |
 | `npm start` | تشغيل النسخة المبنية |
 | `npm test` | تشغيل الاختبارات |
-
-## ما تعلمته
-
-- الفرق بين بناء مشروع بـ Express وربط الأجزاء يدوياً، وبين NestJS اللي بيربطها تلقائياً.
-- فصل الكود إلى routes و controllers و services.
-- استخدام قيود قاعدة البيانات لمنع التكرار.
-- معالجة الأخطاء في مكان واحد بدل تكرارها في كل controller.
