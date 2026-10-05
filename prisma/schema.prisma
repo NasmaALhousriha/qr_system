@@ -8,14 +8,32 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  ADMIN
+  DOCTOR
+  STUDENT
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role
+  student      Student?
+  lectures     Lecture[]
+  createdAt    DateTime  @default(now())
+}
+
 model Student {
-  id          Int          @id @default(autoincrement())
-  name        String
-  email       String       @unique
-  studentId   String       @unique
-  qrCodeToken String       @unique
-  attendances Attendance[]
-  createdAt   DateTime     @default(now())
+  id                 Int          @id @default(autoincrement())
+  studentId          String       @unique
+  name               String
+  email              String       @unique
+  activationCodeHash String?
+  userId             Int?         @unique
+  user               User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  attendances        Attendance[]
 }
 
 model Lecture {
@@ -23,17 +41,19 @@ model Lecture {
   title       String
   startTime   DateTime
   endTime     DateTime
+  doctorId    Int
+  doctor      User         @relation(fields: [doctorId], references: [id])
   attendances Attendance[]
   createdAt   DateTime     @default(now())
 }
 
 model Attendance {
-  id         Int      @id @default(autoincrement())
-  studentId  Int
-  lectureId  Int
-  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  lecture    Lecture  @relation(fields: [lectureId], references: [id], onDelete: Cascade)
-  scannedAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  lectureId Int
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lecture   Lecture  @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  scannedAt DateTime @default(now())
 
   @@unique([studentId, lectureId])
 }

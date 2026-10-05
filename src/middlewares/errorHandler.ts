@@ -6,5 +6,6 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
 
   res.status(status).json({
     message: status === 500 ? 'Internal server error' : err.message,
+    ...(err.details ? { errors: err.details } : {}),
   });
 };

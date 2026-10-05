@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsx --test tests/api.test.ts",
+    "test": "tsx --test --test-concurrency=1 tests/auth.test.ts tests/permissions.test.ts tests/admin.test.ts tests/lectures.test.ts tests/attendance.test.ts",
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "create-admin": "tsx scripts/create-admin.ts"
   },
   "keywords": [],
   "author": "",
@@ -16,13 +17,16 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "^7.10.0",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "pg": "8.23.1",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "26.6.3",
     "@types/pg": "^8.23.1",
     "@types/qrcode": "1.5.6",

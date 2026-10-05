@@ -2,36 +2,20 @@ import { Request, Response } from 'express';
 import * as lectureService from '../services/lecture.service';
 import { AppError } from '../utils/AppError';
 
-function parseDate(value: unknown): Date | null {
-  if (typeof value !== 'string') return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
 export async function create(req: Request, res: Response) {
-  const { title, startTime, endTime } = req.body ?? {};
+  const { title, startTime, endTime } = req.validated.body;
+  if (endTime <= startTime) throw new AppError('endTime must be after startTime');
 
-  if (typeof title !== 'string' || !title.trim()) {
-    throw new AppError('title is required');
-  }
-
-  const start = parseDate(startTime);
-  const end = parseDate(endTime);
-  if (!start || !end) {
-    throw new AppError('startTime and endTime must be valid dates');
-  }
-  if (end <= start) {
-    throw new AppError('endTime must be after startTime');
-  }
-
-  const lecture = await lectureService.createLecture({
-    title: title.trim(),
-    startTime: start,
-    endTime: end,
-  });
+  const lecture = await lectureService.createLecture(req.user!.id, { title, startTime, endTime });
   res.status(201).json(lecture);
 }
 
 export async function list(req: Request, res: Response) {
-  res.json(await lectureService.getLectures());
+  res.json(await lectureService.getLectures(req.user!));
+}
+
+export async function getQr(req: Request, res: Response) {
+  const qr = await lectureService.getLectureQr(req.validated.params.id, req.user!.id);
+  res.set('Cache-Control', 'no-store'); // الرمز بيتغير، ممنوع يتخزن بالمتصفح
+  res.json(qr);
 }
