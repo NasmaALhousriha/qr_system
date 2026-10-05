@@ -72,15 +72,37 @@ export async function importStudents(rows: unknown[]) {
 
   const activationCodes: { studentId: string; email: string; activationCode: string }[] = [];
   for (const part of chunk(toCreate, CHUNK_SIZE)) {
+    //الرمز يلي تولد
+    const generated = new Map<string, string>();
     const data = part.map((s) => {
       const code = generateActivationCode();
-      activationCodes.push({ studentId: s.studentId, email: s.email, activationCode: code });
+      generated.set(s.studentId, code);
       return { ...s, activationCodeHash: hashActivationCode(code) };
     });
-    await prisma.student.createMany({ data, skipDuplicates: true });
+   const inserted = await prisma.student.createManyAndReturn({
+      data,
+      skipDuplicates: true,// بتجاهل هون اذا طالب تاني سجل 
+      select: { studentId: true, email: true },
+    });
+
+    const insertedIds = new Set(inserted.map((s) => s.studentId));
+
+    for (const s of inserted) {
+      activationCodes.push({
+        studentId: s.studentId,
+        email: s.email,
+        activationCode: generated.get(s.studentId)!,
+      });
+    }
+    for (const s of part) {
+      if (!insertedIds.has(s.studentId)) {
+        // هلا الشي يلي اتاهلنا فوق من الداتا بيز بحطو هون بالسكيب
+        skipped.push({ studentId: s.studentId, reason: 'already in the registry' });
+      }
+    }
   }
 
-  return { created: toCreate.length, skipped, invalid, activationCodes };
+  return { created: activationCodes.length, skipped, invalid, activationCodes };
 }
 
 export async function resetActivationCode(id: number) {

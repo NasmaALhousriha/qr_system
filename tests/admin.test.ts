@@ -169,4 +169,36 @@ describe('Account activation', () => {
     assert.equal((await activate(studentIdOf('C'), oldCode)).status, 400);
     assert.equal((await activate(studentIdOf('C'), reset.body.activationCode)).status, 200);
   });
+  // بدنا نعمل اختبار انو نبعت 8 طلبات ل 3 طلاب بشكل متزامن
+
+    test('simultaneous imports of the same students give out exactly one working code each', async () => {
+    const students = ['G1', 'G2', 'G3'].map((key) => ({
+      studentId: studentIdOf(key),
+      name: `Student ${key}`,
+      email: emailOf(`student-${key.toLowerCase()}`),
+    }));
+
+    // 8 طلبات استيراد بنفس اللحظة لنفس الطلاب
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () =>
+        api('POST', '/api/students/import', { token: f.admin.token, json: { students } }),
+      ),
+    );
+
+    // العدد الإجمالي للمنشأ = عدد الطلاب 
+    const totalCreated = results.reduce((sum, r) => sum + r.body.created, 0);
+    assert.equal(totalCreated, students.length);
+
+    for (const s of students) {
+      // كل طالب بياخد رمز واحد بس بكل الردود
+      const codes = results
+        .flatMap((r) => r.body.activationCodes)
+        .filter((c: any) => c.studentId === s.studentId);
+      assert.equal(codes.length, 1, `${s.studentId} got ${codes.length} codes`);
+
+      // والرمز يلي انعطى هو يلي انحفظ فعلاً: التفعيل بينجح
+      const res = await activate(s.studentId, codes[0].activationCode);
+      assert.equal(res.status, 200);
+    }
+  });
 });
