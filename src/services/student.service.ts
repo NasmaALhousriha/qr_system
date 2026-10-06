@@ -106,15 +106,33 @@ export async function importStudents(rows: unknown[]) {
 }
 
 export async function resetActivationCode(id: number) {
-  const student = await prisma.student.findUnique({ where: { id } });
+  const student = await prisma.student.findUnique({
+     where: { id } ,
+     omit: { activationCodeHash: false },
+    });
   if (!student) throw new AppError('Student not found', 404);
   if (student.userId) throw new AppError('Account is already activated', 409);
 
   const code = generateActivationCode();
-  await prisma.student.update({
-    where: { id },
+  // بخلي يعدل بس بشرط انو يكون الصف لسا متل ما قريناه 
+
+  const { count } = await prisma.student.updateMany({
+
+    where: {
+       id,
+      userId: null,
+      activationCodeHash: student.activationCodeHash,
+     },
     data: { activationCodeHash: hashActivationCode(code) },
   });
+  
+  if (count === 0) {
+    throw new AppError(
+      'A new code was just generated, or the account was activated. Check the student and try again.',
+      409,
+    );
+  }
+
   return { studentId: student.studentId, email: student.email, activationCode: code };
 }
 
